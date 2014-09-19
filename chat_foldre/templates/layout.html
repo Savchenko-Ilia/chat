@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    <!--<script src="/js/main_funct.js"></script>--->
+    <script type="text/javascript" charset="utf-8">
+    $(document).ready(function(){
+        namespace='/test';
+        var socket = io.connect('http://' + document.domain + ':' + location.port + namespace);
+        //
+        socket.on('send_room_form_update',function(msg){
+            if(msg.code==-1){
+                    $('#content').empty();
+                    $('#chat_name').empty();
+                    $('#snd_room').hide();
+                    $('#content').append('<h5>Choose any room</h5>');
+                    //return false;
+            }else{
+                    $('#snd_room').show();
+                    //return false;
+                }
+        });
+        socket.on('my response', function(msg){
+            $('#content').empty();
+            var arr=JSON.parse(msg.data);
+            for(var i=0;i<msg.data.length;++i){
+            //$.getJSON('msg.data')
+            $('#content').append('<br>'+arr[i].user_name+': '+arr[i].msg);
+            };
+            });
+        socket.on('room msg',function(msg){
+            $('#content').append('<br>'+msg.user_name+': '+msg.data);
+            });
+        socket.on('update room list',function(msg){
+            $('#room_list').empty()
+            var arr=JSON.parse(msg.data)
+            for(var i=0;i<msg.data.length;++i){
+                var el=document.createElement("input");
+                var del=document.createElement("input");
+                el.type="submit";
+                el.id=arr[i].chat_id;
+                el.value=arr[i].name;
+                $('#room_list').append(el);
+                $(el).bind('click', function(){
+                    var id = $(this).attr('id');
+                    if (id>0){
+                        socket.emit('my event',{data: id});
+                        $('#chat_name').empty();
+                        $('#chat_name').append('<h3>'+$(this).attr('value')+' room:</h3>');
+                        return false;}
+                });
+                del.type="submit";
+                del.id=-arr[i].chat_id;
+                del.value="exit";
+                $('#room_list').append(del);
+                $(del).bind('click',function(){
+                    var id=$(this).attr('id');
+                    socket.emit('delete room',{data: -id});
+                    return false;
+                });
+                $('#room_list').append('<br>');
+            };
+            });
+        socket.on('find room result',function(msg){
+            $('#result').empty()
+            var arr=JSON.parse(msg.data)
+            if(arr.length>0){
+                $('#result').append('<h4>Search result:</h4>');
+                $('#result').append('<h6>Click to join</h6>');
+                for(var i=0;i<msg.data.length;++i){
+                    var el=document.createElement("input");
+                    el.type="submit";
+                    el.id=arr[i].chat_id;
+                    el.value=arr[i].name;
+                    $('#result').append(el);
+                    $(el).bind('click',function(){
+                        var id=$(this).attr('id');
+                        socket.emit('join room',{data: id});
+                        $('#chat_name').empty();
+                        $('#chat_name').append('<h3>'+$(this).attr('value')+' room:</h3>');
+                        $('#result').empty();
+                        return false;
+                    });
+                };
+            }else{
+                $('#result').append('<h4>Search result:</h4>');
+                $('#result').append('<h6>Rooms find: 0</h6>');
+            ;}
+            });
+        {% block to_head %}
+        {% endblock %}
+    });
+
+    </script>
+</head>
+<body>
+    <header>
+      <div class="container">
+        <h1 class="logo">Chat</h1>
+          <strong><nav>
+             <ul class="menu">
+
+                 {% if 'email' in session %}
+                 <!--<li><a href="{{ url_for('profile') }}">Profile</a></li>--->
+                 <li><a href="{{ url_for('signout') }}">Sign Out</a></li>
+                 {% else %}
+                 <li><a href="{{ url_for('signup') }}">Sign Up</a></li>
+                 <li><a href="{{ url_for('signin') }}">Sign In</a></li>
+                 {% endif %}
+             </ul>
+        </nav></strong>
+      </div>
+    </header>
+      {% block content %}
+      {% endblock %}
+</body>
+</html>

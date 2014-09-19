@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+{% block to_head %}
+   $('input[type=submit]').bind('click', function(){
+            var id = $(this).attr('id');
+            if (id>0){
+                socket.emit('my event',{data: id});
+                $('#chat_name').empty();
+                $('#chat_name').append('<h3>'+$(this).attr('value')+' room:</h3>');
+                return false;
+                }
+            else if(id=='send_msg'){
+                socket.emit('my room event', {data: $('#room_data').val()});
+                $('#room_data').val('');
+                return false;
+                }
+            else if(id=='id_add_room'){
+                socket.emit('add room', {data: $('#add_room').val()});
+                $('#add_room').val('');
+                return false;
+                }
+            else if(id<0){
+                socket.emit('delete room', {data: -id});
+                return false;
+                }
+            else if(id=='id_join_room'){
+                socket.emit('join room', {data: $('#join_room').val(),id: $(this).find("h5").data("value") });
+                return false;
+                }
+            else if(id=='id_find_room'){
+                socket.emit('find room', {data: $('#find_room').val()});
+                 $('#find_room').val('');
+                return false;
+                }
+            else{
+                $('#room_list').append('<br>'+'Id click:'+id);
+                return false;
+                }
+        });
+{% endblock %}
+{% block content %}
+    <div class="profile">
+        <h4>Profile data</h4>
+        <h5 data-value="{{ session['id'] }}">Name: {{ session['name'] }}</h5>
+        <form action="{{ url_for('profile') }}" method=post>
+        {{ form.hidden_tag() }}
+            <input type="text" name="find room" id="find_room" placeholder="room name">
+            <input type="submit" id="id_find_room" value="Find room">
+            <input type="text" name="add_room" id="add_room" placeholder="room name">
+            <input type="submit" id="id_add_room" value="Add room">
+        </form>
+        <div id="result"></div>
+        <h4>Current rooms:</h4>
+        <div id="room_list">
+                {% for a in element %}
+                <input type="submit" id="{{ a.chat_id }}" value="{{ a.name }}">
+                <input type="submit" id="{{ -a.chat_id }}" value="exit"><br>
+                {% endfor %}
+        </div>
+    </div>
+    <div class="chat">
+        <div id="chat_name"></div>
+        <!--<h3>Chat:</h3>--->
+        <div id="content"></div>
+        <div id="snd_room">
+            <form id="send_room">
+                <input type="text" name="data" id="room_data">
+                <input type="submit" id="send_msg" value="send msg">
+            </form>
+        </div>
+    </div>
+{% endblock %}
